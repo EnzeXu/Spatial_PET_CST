@@ -74,8 +74,54 @@ def one_time_build_A():
             "test_nsga.py",
             dic)
 
+def one_time_build_C0():
+    plans = [
+        # ["A1", 1000, "all", "fixed", 100],
+        # ["A1", 2000, "all", "fixed", 100],
+        # ["A2", 1000, "all", "ranged", 100],
+        # ["A2", 2000, "all", "ranged", 100],
+        # ["A3", 1000, "chosen_0", "fixed", 100],
+        # ["A3", 2000, "chosen_0", "fixed", 100],
+        # ["A4", 1000, "chosen_0", "ranged", 100],
+        # ["A4", 2000, "chosen_0", "ranged", 100],
+        # ["A1", 1000, "all", "fixed", 100],
+        # ["A1", 3000, "all", "fixed", 100],
+        # ["A1", 5000, "all", "fixed", 100],
+        # ["A1", 7000, "all", "fixed", 100],
+        # ["A2", 1000, "all", "ranged", 100],
+        # ["A2", 3000, "all", "ranged", 100],
+        # ["A2", 5000, "all", "ranged", 100],
+        # ["A2", 7000, "all", "ranged", 100],
+        # ["A1", 1250, "all", "fixed", 100],
+        # ["A1", 1500, "all", "fixed", 100],
+        # ["A1", 1750, "all", "fixed", 100],
+        # ["A1", 2000, "all", "fixed", 100],
+        # ["A2", 1250, "all", "ranged", 100],
+        # ["A2", 1500, "all", "ranged", 100],
+        # ["A2", 1750, "all", "ranged", 100],
+        # ["A2", 2000, "all", "ranged", 100],
+        ["C0", 500, "all", "ranged", 100, "params_A2_2250.npy"],
+        ["C0", 1000, "all", "ranged", 100, "params_A2_2250.npy"],
+        ["C0", 1500, "all", "ranged", 100, "params_A2_2250.npy"],
+        ["C0", 2000, "all", "ranged", 100, "params_A2_2250.npy"],
+        ["C1", 500, "all", "ranged", 100, "params_A2_2500.npy"],
+        ["C1", 1000, "all", "ranged", 100, "params_A2_2500.npy"],
+        ["C1", 1500, "all", "ranged", 100, "params_A2_2500.npy"],
+        ["C1", 2000, "all", "ranged", 100, "params_A2_2500.npy"],
+    ]
+    dic = dict()
+    for one_plan in plans:
+        dic["generation"] = one_plan[1]
+        dic["dataset"] = one_plan[2]
+        dic["start"] = one_plan[3]
+        dic["pop_size"] = one_plan[4]
+        dic["params"] = one_plan[5]
 
+        one_slurm(
+            "GA_{}_{}".format(one_plan[0], one_plan[1]),
+            "test_nsga.py",
+            dic)
 
 if __name__ == "__main__":
-    one_time_build_A()
+    one_time_build_C0()
     pass
