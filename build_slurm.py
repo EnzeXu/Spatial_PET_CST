@@ -74,7 +74,7 @@ def one_time_build_A():
             "test_nsga.py",
             dic)
 
-def one_time_build_C0():
+def one_time_build_CD():
     plans = [
         # ["A1", 1000, "all", "fixed", 100],
         # ["A1", 2000, "all", "fixed", 100],
@@ -100,14 +100,22 @@ def one_time_build_C0():
         # ["A2", 1500, "all", "ranged", 100],
         # ["A2", 1750, "all", "ranged", 100],
         # ["A2", 2000, "all", "ranged", 100],
-        ["C0", 500, "all", "ranged", 100, "params_A2_2250.npy"],
-        ["C0", 1000, "all", "ranged", 100, "params_A2_2250.npy"],
-        ["C0", 1500, "all", "ranged", 100, "params_A2_2250.npy"],
-        ["C0", 2000, "all", "ranged", 100, "params_A2_2250.npy"],
-        ["C1", 500, "all", "ranged", 100, "params_A2_2500.npy"],
-        ["C1", 1000, "all", "ranged", 100, "params_A2_2500.npy"],
-        ["C1", 1500, "all", "ranged", 100, "params_A2_2500.npy"],
-        ["C1", 2000, "all", "ranged", 100, "params_A2_2500.npy"],
+        ["C0", 1000, "all", "ranged", 100, "params_A2_2250.npy", "C"],
+        ["C0", 2000, "all", "ranged", 100, "params_A2_2250.npy", "C"],
+        ["C0", 3000, "all", "ranged", 100, "params_A2_2250.npy", "C"],
+        ["C0", 4000, "all", "ranged", 100, "params_A2_2250.npy", "C"],
+        ["C1", 1000, "all", "ranged", 100, "params_A2_2500.npy", "C"],
+        ["C1", 2000, "all", "ranged", 100, "params_A2_2500.npy", "C"],
+        ["C1", 3000, "all", "ranged", 100, "params_A2_2500.npy", "C"],
+        ["C1", 4000, "all", "ranged", 100, "params_A2_2500.npy", "C"],
+        ["D0", 1000, "all", "ranged", 100, "params_A2_2250.npy", "D"],
+        ["D0", 2000, "all", "ranged", 100, "params_A2_2250.npy", "D"],
+        ["D0", 3000, "all", "ranged", 100, "params_A2_2250.npy", "D"],
+        ["D0", 4000, "all", "ranged", 100, "params_A2_2250.npy", "D"],
+        ["D1", 1000, "all", "ranged", 100, "params_A2_2500.npy", "D"],
+        ["D1", 2000, "all", "ranged", 100, "params_A2_2500.npy", "D"],
+        ["D1", 3000, "all", "ranged", 100, "params_A2_2500.npy", "D"],
+        ["D1", 4000, "all", "ranged", 100, "params_A2_2500.npy", "D"],
     ]
     dic = dict()
     for one_plan in plans:
@@ -116,6 +124,7 @@ def one_time_build_C0():
         dic["start"] = one_plan[3]
         dic["pop_size"] = one_plan[4]
         dic["params"] = one_plan[5]
+        dic["diff_strategy"] = one_plan[6]
 
         one_slurm(
             "GA_{}_{}".format(one_plan[0], one_plan[1]),
@@ -123,5 +132,5 @@ def one_time_build_C0():
             dic)
 
 if __name__ == "__main__":
-    one_time_build_C0()
+    one_time_build_CD()
     pass

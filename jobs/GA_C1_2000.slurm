@@ -10,4 +10,4 @@
 #SBATCH --error="jobs_oe/GA_C1_2000-%j.e"
 echo $(pwd) > "jobs/pwd.txt"
 source venv/bin/activate
-python test_nsga.py --generation 2000 --dataset all --start ranged --pop_size 100 --params params_A2_2500.npy
+python test_nsga.py --generation 2000 --dataset all --start ranged --pop_size 100 --params params_A2_2500.npy --diff_strategy C

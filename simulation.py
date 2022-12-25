@@ -63,6 +63,7 @@ def simulate(pop_size=50, generation=100, method="GA"):
     parser.add_argument("--generation", type=int, help="generation")
     parser.add_argument("--pop_size", type=int, help="pop_size")
     parser.add_argument("--params", type=str, help="params file (in 'saves/')")
+    parser.add_argument("--diff_strategy", type=str, help="C / D")
     opt = parser.parse_args()
     if opt.generation:
         generation = opt.generation
