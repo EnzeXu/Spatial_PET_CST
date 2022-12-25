@@ -30,18 +30,19 @@ def toy_loss_func(x):
 
 
 class MyProblem(ElementwiseProblem):
-    def __init__(self, ct):
-        super().__init__(n_var=PARAM_NUM + STARTS_NUM,
+    def __init__(self, ct, given_params):
+        super().__init__(n_var=DIFFUSION_NUM,
                          n_obj=1,
                          # n_eq_constr=1,
                          #n_ieq_constr=0,
-                         xl=np.asarray([PARAMS[i]["lb"] for i in range(PARAM_NUM)] + [STARTS_WEIGHTS[i]["lb"] for i in range(STARTS_NUM)]),
-                         xu=np.asarray([PARAMS[i]["ub"] for i in range(PARAM_NUM)] + [STARTS_WEIGHTS[i]["ub"] for i in range(STARTS_NUM)]),
+                         xl=np.asarray([DIFFUSION[i]["lb"] for i in range(DIFFUSION_NUM)]),
+                         xu=np.asarray([DIFFUSION[i]["ub"] for i in range(DIFFUSION_NUM)]),
                          )
         self.ct = ct
+        self.params = given_params
 
     def _evaluate(self, x, out, *args, **kwargs):
-        loss_all, csf_rate = loss_func(x[:-STARTS_NUM], x[-STARTS_NUM:], self.ct)
+        loss_all, csf_rate = loss_func(self.params[:-STARTS_NUM], self.params[-STARTS_NUM:], x, self.ct)
         # loss1, loss2, loss3, loss4, loss5, loss6, loss7 = iter(loss_all)
         loss1 = np.sum(loss_all) + csf_rate # skip NPET
         # loss1 = np.sum(np.abs(x))
@@ -61,6 +62,7 @@ def simulate(pop_size=50, generation=100, method="GA"):
     parser.add_argument("--start", type=str, help="start strategy")
     parser.add_argument("--generation", type=int, help="generation")
     parser.add_argument("--pop_size", type=int, help="pop_size")
+    parser.add_argument("--params", type=str, help="params file (in 'saves/')")
     opt = parser.parse_args()
     if opt.generation:
         generation = opt.generation
@@ -70,15 +72,17 @@ def simulate(pop_size=50, generation=100, method="GA"):
     print("[run - multi_obj] start strategy: {}".format(opt.start))
     print("[run - multi_obj] generation: {}".format(generation))
     print("[run - multi_obj] pop_size: {}".format(pop_size))
+    print("[run - multi_obj] params(57): saves/{}".format(opt.params))
     ct = ConstTruth(
         csf_folder_path="data/CSF/",
         pet_folder_path="data/PET/",
         dataset=opt.dataset,
         start=opt.start,
     )
-    problem = MyProblem(ct)
+    given_params = np.load("saves/{}".format(opt.params))
+    problem = MyProblem(ct, given_params)
 
-    initial_x = np.asarray([PARAMS[i]["init"] for i in range(PARAM_NUM)] + [STARTS_WEIGHTS[i]["init"] for i in range(STARTS_NUM)])  # default
+    initial_x = np.asarray([DIFFUSION[i]["init"] for i in range(DIFFUSION_NUM)])  # default
 #    initial_x = np.load("saves/params_20221203_113822.npy")
     assert method in ["GA", "DE", "ES", "PSO", "BRKGA", "G3PCX"]
     print("[run - multi_obj] Method: {}".format(method))
@@ -179,13 +183,14 @@ def simulate(pop_size=50, generation=100, method="GA"):
     time_string_end = get_now_string()
     print("[run - multi_obj] End at {0} ({1:.2f} min)".format(time_string_end, (t1 - t0) / 60.0))
 
-    original_params = np.asarray([PARAMS[i]["init"] for i in range(PARAM_NUM)])
-    original_starts_weights = np.asarray([STARTS_WEIGHTS[i]["init"] for i in range(STARTS_NUM)])
-    old_loss_parts, old_csf_rate_loss = loss_func(original_params, original_starts_weights, ct)
+    given_params_weights = given_params[:-STARTS_NUM]
+    given_starts_weights = given_params[-STARTS_NUM:]
+    original_diffusion = np.asarray([DIFFUSION[i]["init"] for i in range(DIFFUSION_NUM)])
+    old_loss_parts, old_csf_rate_loss = loss_func(given_params_weights, given_starts_weights, original_diffusion, ct)
     old_loss = sum(old_loss_parts) + old_csf_rate_loss
     print("[run - multi_obj] original loss: {}".format(old_loss))
     print("[run - multi_obj] original loss parts: {} csf match loss: {}".format(list(old_loss_parts), old_csf_rate_loss))
-    new_loss_parts, new_csf_rate_loss = loss_func(best_x[:PARAM_NUM], best_x[-STARTS_NUM:], ct)
+    new_loss_parts, new_csf_rate_loss = loss_func(given_params_weights, given_starts_weights, best_x, ct)
     new_loss = sum(new_loss_parts) + new_csf_rate_loss
     print("[run - multi_obj] new loss: {}".format(new_loss))
     print("[run - multi_obj] new loss parts: {} csf match loss: {}".format(list(new_loss_parts), new_csf_rate_loss))
@@ -201,7 +206,7 @@ def simulate(pop_size=50, generation=100, method="GA"):
         f.write("pop_size: {}\n".format(pop_size))
         f.write("old_loss: {}\n".format(old_loss))
         f.write("new_loss: {}\n".format(new_loss))
-    run(best_x[:PARAM_NUM], best_x[-STARTS_NUM:], time_string_start)
+    run(given_params_weights, given_starts_weights, best_x, time_string_start)
     # original_loss = np.sum(loss) + csf_rate_loss
     # print("[run - multi_obj] Note that using the initial params loss = {}".format(original_loss))
 

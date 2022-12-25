@@ -118,17 +118,19 @@ class ADSolver:
         self.output = None
         self.params = None
         self.starts_weights = None
+        self.diffusion_list = None
         self.tol = 1e-4
         # print("atol = rtol = {}".format(self.tol))
 
-    def step(self, _params=None, _starts_weights=None):
-        if _params is not None:
-            self.params = np.asarray(_params)
-            self.starts_weights = np.asarray(_starts_weights)
-        else:
-            self.params = np.asarray([PARAMS[i]["init"] for i in range(PARAM_NUM)])
-            self.starts_weights = np.asarray([STARTS_WEIGHTS[i]["init"] for i in range(STARTS_NUM)])
-            print("Params & starts_weights are not given. Using the initial value instead to simulate ...")
+    def step(self, _params, _starts_weights, _diffusion_list):
+        # if _params is not None:
+        self.params = np.asarray(_params)
+        self.starts_weights = np.asarray(_starts_weights)
+        self.diffusion_list = _diffusion_list
+        # else:
+            # self.params = np.asarray([PARAMS[i]["init"] for i in range(PARAM_NUM)])
+            # self.starts_weights = np.asarray([STARTS_WEIGHTS[i]["init"] for i in range(STARTS_NUM)])
+            # print("Params & starts_weights are not given. Using the initial value instead to simulate ...")
         self.y0 = self.y0 * self.starts_weights
         self.y = odeint(self.pend, self.y0, self.t, rtol=self.tol, atol=self.tol)
         self.output = self.get_output()
@@ -209,11 +211,12 @@ class ADSolver:
         # n_a2T = 2.0
         # n_a1Tp = 2.0
 
-        d_Am = 1.0  # 5.0
-        d_Ao = 1.0
-        d_Tm = 1.0  # 5.0
-        d_Tp = 1.0  # 5.0
-        d_To = 1.0
+        # d_Am = 1.0  # 5.0
+        # d_Ao = 1.0
+        # d_Tm = 1.0  # 5.0
+        # d_Tp = 1.0  # 5.0
+        # d_To = 1.0
+        d_Am, d_Ao, d_Tm, d_Tp, d_To = iter(self.diffusion_list)
 
         sum_func = np.sum
         matmul_func = my_matmul  # np.matmul
@@ -385,10 +388,10 @@ def f_csf_rate(x, thr=1.7052845384621318, tol=0.2, p=1.0):
     return max((x - thr * (1 + tol)) * p, (thr * (1 - tol) - x) * p, 0)
 
 
-def loss_func(params, starts_weight, ct):
+def loss_func(params, starts_weight, diffusion_list, ct):
     # print("calling loss_func..")
     truth = ADSolver("CN")
-    truth.step(params, starts_weight)
+    truth.step(params, starts_weight, diffusion_list)
     targets = ["APET", "TPET", "NPET", "ACSF", "TpCSF", "TCSF", "TtCSF"]
     record = np.zeros(len(targets))
     for i, one_target in enumerate(targets):
@@ -451,7 +454,7 @@ class MyTime:
         print("count = {}; total time = {} s; avg time = {} s".format(self.count, self.sum, self.sum / self.count))
 
 
-def run(params=None, starts=None, time_string=None):
+def run(params=None, starts=None, diffusion_list=None, time_string=None):
     if not time_string:
         time_string = get_now_string()
     print("Time String (as folder name): {}".format(time_string))
@@ -462,6 +465,7 @@ def run(params=None, starts=None, time_string=None):
     parser.add_argument("--start", type=str, help="start strategy")
     parser.add_argument("--generation", type=int, help="generation")
     parser.add_argument("--pop_size", type=int, help="pop_size")
+    parser.add_argument("--params", type=str, help="params file (in 'saves/')")
     opt = parser.parse_args()
     ct = ConstTruth(
         csf_folder_path="data/CSF/",
@@ -469,9 +473,10 @@ def run(params=None, starts=None, time_string=None):
         dataset=opt.dataset,
         start=opt.start,
     )
+    given_params = np.load("saves/{}".format(opt.params))
     truth = ADSolver(class_name, ct)
-    truth.step(params, starts)
-    loss, csf_rate_loss = loss_func(params, starts, ct)
+    truth.step(params, starts, diffusion_list)
+    loss, csf_rate_loss = loss_func(params, starts, diffusion_list, ct)
     print("loss: {}".format(sum(loss) + csf_rate_loss))
     print("loss parts: {} csf match loss: {}".format(list(loss), csf_rate_loss))
     truth.draw(time_string=time_string, given_loss=loss)
