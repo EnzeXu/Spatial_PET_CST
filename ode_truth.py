@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import time
+from datetime import datetime
 import argparse
 from scipy.integrate import odeint
 from tqdm import tqdm
@@ -28,7 +29,7 @@ PET-N counts: [92. 43. 80. 39. 11.]
 
 
 def get_now_string():
-    return time.strftime("%Y%m%d_%H%M%S", time.localtime(time.time()))
+    return datetime.now().strftime("%Y%m%d_%H%M%S_%f")
 
 
 def numpy_safe_pow(x, n):
@@ -94,9 +95,36 @@ class ConstTruth:
             pass
 
 
+class ConstTruthSpatial:
+    def __init__(self, **params):
+        assert "csf_folder_path" in params and "pet_folder_path" in params, "please provide the save folder paths"
+        csf_folder_path, pet_folder_path = params["csf_folder_path"], params["pet_folder_path"]
+        label_list = LABEL_LIST
+        self.y = dict()
+        self.x = dict()
+        self.x_all = np.asarray([3.0, 6.0, 9.0, 11.0, 12.0])
+        self.lines = ["APET", "TPET", "NPET"]
+        for one_key in self.lines:
+            self.y[one_key] = []
+            self.x[one_key] = self.x_all
+        for i, class_name in enumerate(label_list):
+            pet_data_a = np.load(os.path.join(pet_folder_path, "PET-A_{}.npy".format(class_name)))
+            pet_data_t = np.load(os.path.join(pet_folder_path, "PET-T_{}.npy".format(class_name)))
+            pet_data_n = np.load(os.path.join(pet_folder_path, "PET-N_{}.npy".format(class_name)))
+            self.y["APET"] = self.y["APET"] + [pet_data_a]
+            self.y["TPET"] = self.y["TPET"] + [pet_data_t]
+            self.y["NPET"] = self.y["NPET"] + [pet_data_n]
+        for one_key in self.lines:
+            self.y[one_key] = np.asarray(self.y[one_key])
+        self.const_min_max_scale = {
+            "APET": [0.35, 0.50],
+            "TPET": [0.36, 0.51],
+            "NPET": [0.55, 0.70],
+        }
+
 class ADSolver:
     def __init__(self, class_name, const_truth=None):
-        self.n = 1  # Config.N_dim
+        self.n = 160  # Config.N_dim
         self.L = Config.L
         #        self.t = np.linspace(0, 10 - 0.1, 100)
         self.T = 12.01
@@ -116,8 +144,10 @@ class ADSolver:
         self.colors = ["red", "green", "blue", "cyan", "orange", "purple", "brown", "gray", "olive"]
         self.y = None
         self.output = None
+        self.output_spatial = None
         self.params = None
         self.starts_weights = None
+        self.starts_weights_spatial = None
         self.diffusion_list = None
         self.tol = 1e-4
         # print("atol = rtol = {}".format(self.tol))
@@ -126,14 +156,41 @@ class ADSolver:
         # if _params is not None:
         self.params = np.asarray(_params)
         self.starts_weights = np.asarray(_starts_weights)
+        self.starts_weights_spatial = np.concatenate([
+            np.repeat(self.starts_weights[0], 1 if i in [3, 8, 9] else self.n) for i in range(11)
+        ])
         self.diffusion_list = _diffusion_list
         # else:
             # self.params = np.asarray([PARAMS[i]["init"] for i in range(PARAM_NUM)])
             # self.starts_weights = np.asarray([STARTS_WEIGHTS[i]["init"] for i in range(STARTS_NUM)])
             # print("Params & starts_weights are not given. Using the initial value instead to simulate ...")
-        self.y0 = self.y0 * self.starts_weights
+        # self.y0 = self.y0 * self.starts_weights
+        self.y0 = self.y0 * self.starts_weights_spatial
         self.y = odeint(self.pend, self.y0, self.t, rtol=self.tol, atol=self.tol)
         self.output = self.get_output()
+
+    def step_spatial(self, _params, _starts_weights, _diffusion_list):
+        # if _params is not None:
+        self.params = np.asarray(_params)
+        self.starts_weights = np.asarray(_starts_weights)
+        self.starts_weights_spatial = np.concatenate([
+            np.repeat(self.starts_weights[0], 1 if i in [3, 8, 9] else self.n) for i in range(11)
+        ])
+        self.diffusion_list = _diffusion_list
+        # else:
+            # self.params = np.asarray([PARAMS[i]["init"] for i in range(PARAM_NUM)])
+            # self.starts_weights = np.asarray([STARTS_WEIGHTS[i]["init"] for i in range(STARTS_NUM)])
+            # print("Params & starts_weights are not given. Using the initial value instead to simulate ...")
+        # self.y0 = self.y0 * self.starts_weights
+        self.y0 = self.y0 * self.starts_weights_spatial
+        self.y = odeint(self.pend, self.y0, self.t, rtol=self.tol, atol=self.tol)
+        self.output_spatial = self.get_output_spatial()
+
+    def get_output_spatial(self):
+        Af = self.y[:, self.n * 2: self.n * 3]
+        Tf = self.y[:, self.n * 6 + 1: self.n * 7 + 1]
+        N = self.y[:, self.n * 7 + 3: self.n * 8 + 3]
+        return [Af, Tf, N]
 
     def get_output(self):
         Am = self.y[:, 0: self.n]
@@ -219,7 +276,7 @@ class ADSolver:
         d_Am, d_Ao, d_Tm, d_Tp, d_To = iter(self.diffusion_list)
 
         sum_func = np.sum
-        matmul_func = my_matmul  # np.matmul
+        matmul_func = np.matmul # my_matmul  # np.matmul
         offset = 1e-18
 
 #        Am_ = k_p1Am + k_p2Am * 1.0 / (numpy_safe_pow(K_mTA, n_TA) / numpy_safe_pow(To, n_TA) + 1.0) - k_dAm * Am - n_a1A * k_a1A * (
@@ -388,6 +445,9 @@ def f_csf_rate(x, thr=1.7052845384621318, tol=0.2, p=1.0):
     return max((x - thr * (1 + tol)) * p, (thr * (1 - tol) - x) * p, 0)
 
 
+def rate_penalty(x, lb, ub, p=1.0):
+    return max((x - ub) * p, (lb - x) * p, 0)
+
 def loss_func(params, starts_weight, diffusion_list, ct):
     # print("calling loss_func..")
     truth = ADSolver("CN")
@@ -430,6 +490,108 @@ def loss_func(params, starts_weight, diffusion_list, ct):
     return record, csf_rate  # remove NPET here
 
 
+
+def loss_func_spatial(params, starts_weight, diffusion_list, ct_spatial: ConstTruthSpatial, silent=True, save_flag=False, element_id=None):
+    ad = ADSolver("CN")
+    ad.step_spatial(params, starts_weight, diffusion_list)
+    output = ad.get_output_spatial()
+    # print([item.shape for item in output])
+    targets = ["APET", "TPET", "NPET"]
+    record_pattern_penalty = np.zeros(len(targets))
+    record_rate_penalty = np.zeros(len(targets))
+    record_rate = np.zeros(len(targets))
+    for i, one_target in enumerate(targets):
+        target_points = np.asarray(ct_spatial.y[one_target])
+        target_points_scaled = (target_points - np.min(target_points)) / (np.max(target_points) - np.min(target_points))
+        # print(target_points.shape)
+        t_fixed = np.asarray(ct_spatial.x[one_target])
+    #     # if one_target in ["ACSF", "TpCSF", "TCSF", "TtCSF"]:  # skip the second points for all CSFs
+    #     #     target_points = target_points[[0, 2, 3, 4]]
+    #     #     t_fixed = t_fixed[[0, 2, 3, 4]]
+        index_fixed = (t_fixed / ad.T_unit).astype(int)
+        predict_points = np.asarray(ad.output_spatial[i][index_fixed])
+        if np.max(predict_points) - np.min(predict_points) <= 1e-15:
+            predict_points_scaled = np.zeros(len(target_points_scaled))
+        else:
+            predict_points_scaled = (predict_points - np.min(predict_points)) / (np.max(predict_points) - np.min(predict_points))
+        record_rate[i] = (np.max(predict_points) - np.min(predict_points)) / np.max(predict_points)
+        # print(record_rate)
+        record_rate_penalty[i] = rate_penalty(
+            record_rate[i],
+            ct_spatial.const_min_max_scale[one_target][0],
+            ct_spatial.const_min_max_scale[one_target][1],
+        )
+        record_pattern_penalty[i] = np.mean((predict_points_scaled - target_points_scaled) ** 2)
+    if not silent:
+        print("record_rate:", record_rate)
+        print("record_rate_penalty:", record_rate_penalty)
+        print("record_pattern_penalty:", record_pattern_penalty)
+    time_string = get_now_string()
+    loss = np.sum(record_pattern_penalty) + np.sum(record_rate_penalty)
+    with open("figure_spatial/record_20230101.txt", "a") as f:
+        f.write("{0}, {1}, {2:.9f}, {3:.9f}, {4:.9f}, {5:.6e}, {6:.6e}, {7:.6e}, {8:.6e}, {9:.6e}\n".format(
+            element_id,
+            time_string,
+            loss,
+            np.sum(record_pattern_penalty),
+            np.sum(record_rate_penalty),
+            diffusion_list[0],
+            diffusion_list[1],
+            diffusion_list[2],
+            diffusion_list[3],
+            diffusion_list[4],
+        ))
+    if save_flag:
+        folder_path = "./figure_spatial/{}/".format(time_string)
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+        np.save("{}/diffusion_list.npy".format(folder_path), np.asarray(diffusion_list))
+        np.save("{}/params.npy".format(folder_path), np.asarray(params))
+        np.save("{}/starts_weight.npy".format(folder_path), np.asarray(starts_weight))
+        fig = plt.figure(figsize=(4 * len(LABEL_LIST), 3 * len(targets)))
+
+        for i, one_target in enumerate(targets):
+            target_points = np.asarray(ct_spatial.y[one_target])
+            t_fixed = np.asarray(ct_spatial.x[one_target])
+            index_fixed = (t_fixed / ad.T_unit).astype(int)
+            predict_points = np.asarray(ad.output_spatial[i][index_fixed])
+            for j in range(len(LABEL_LIST)):
+                ax = fig.add_subplot(len(LABEL_LIST), len(targets), i * len(LABEL_LIST) + j + 1)
+                ax.set_title("{}-{}".format(one_target, LABEL_LIST[j]))
+                ax.plot(range(1, 161), target_points[j, :], c="black", marker="o", markersize=1, linewidth=1)
+                ax2 = ax.twinx()
+                ax2.plot(range(1, 161), predict_points[j, :], c="red", marker="o", markersize=1, linewidth=1)
+                ax2.tick_params(axis='y', labelcolor="red")
+        plt.tight_layout()
+        plt.savefig("{}/diffusion.png".format(folder_path), dpi=300)
+        # plt.show()
+        plt.close()
+    return time_string, loss
+        # print(predict_points.shape)
+    #     # print("target_points:", target_points.shape)
+    #     # print("predict_points:", predict_points.shape)
+    #
+    #     target_points_scaled = (target_points - np.min(target_points)) / (np.max(target_points) - np.min(target_points))
+    #     # print("[loss_func] ({}) predict_points: {}".format(one_target, predict_points))
+    #
+    #     if np.max(predict_points) - np.min(predict_points) <= 1e-15:
+    #         predict_points_scaled = np.zeros(len(target_points_scaled))
+    #     else:
+    #         predict_points_scaled = (predict_points - np.min(predict_points)) / (np.max(predict_points) - np.min(predict_points))
+    #     # try:
+    #     #     # assert 0.0 not in list(np.max(predict_points) - np.min(predict_points))
+    #     #     print(predict_points - np.min(predict_points), np.max(predict_points) - np.min(predict_points))
+    #     #     predict_points_scaled = (predict_points - np.min(predict_points)) / (np.max(predict_points) - np.min(predict_points))
+    #     # except Exception as e:
+    #     #     print(e)
+    #     #     predict_points_scaled = np.zeros(len(target_points_scaled))
+    #
+    #     # record[i] = np.mean(((predict_points - target_points) / target_points) ** 2)
+    #     record[i] = np.mean((predict_points_scaled - target_points_scaled) ** 2)
+    # # record = record[[0, 1, 3, 4, 5, 6]]
+    # csf_rate = f_csf_rate(np.max(truth.output[3][0]) / np.max(truth.output[6][0]))
+    # return record, csf_rate  # remove NPET here
+
 # MyTime is only for debugging
 class MyTime:
     def __init__(self):
@@ -454,48 +616,92 @@ class MyTime:
         print("count = {}; total time = {} s; avg time = {} s".format(self.count, self.sum, self.sum / self.count))
 
 
-def run(params=None, starts=None, diffusion_list=None, time_string=None):
-    if not time_string:
-        time_string = get_now_string()
-    print("Time String (as folder name): {}".format(time_string))
+def run(params=None, starts=None, diffusion_list=None, time_string=None, silent_flag=False):
+    if not silent_flag:
+        if not time_string:
+            time_string = get_now_string()
+        print("Time String (as folder name): {}".format(time_string))
 
     class_name = "CN"
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", type=str, help="dataset strategy")
-    parser.add_argument("--start", type=str, help="start strategy")
-    parser.add_argument("--generation", type=int, help="generation")
-    parser.add_argument("--pop_size", type=int, help="pop_size")
-    parser.add_argument("--params", type=str, help="params file (in 'saves/')")
-    parser.add_argument("--diff_strategy", type=str, help="C / D")
-    opt = parser.parse_args()
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("--dataset", type=str, help="dataset strategy")
+    # parser.add_argument("--start", type=str, help="start strategy")
+    # parser.add_argument("--generation", type=int, help="generation")
+    # parser.add_argument("--pop_size", type=int, help="pop_size")
+    # parser.add_argument("--params", type=str, help="params file (in 'saves/')")
+    # parser.add_argument("--diff_strategy", type=str, help="C / D")
+    # opt = parser.parse_args()
     ct = ConstTruth(
         csf_folder_path="data/CSF/",
         pet_folder_path="data/PET/",
         dataset=opt.dataset,
         start=opt.start,
     )
-    given_params = np.load("saves/{}".format(opt.params))
+    # given_params = np.load("saves/{}".format(opt.params))
     truth = ADSolver(class_name, ct)
     truth.step(params, starts, diffusion_list)
     loss, csf_rate_loss = loss_func(params, starts, diffusion_list, ct)
-    print("loss: {}".format(sum(loss) + csf_rate_loss))
-    print("loss parts: {} csf match loss: {}".format(list(loss), csf_rate_loss))
-    truth.draw(time_string=time_string, given_loss=loss)
+    if not silent_flag:
+        print("loss: {}".format(sum(loss) + csf_rate_loss))
+        print("loss parts: {} csf match loss: {}".format(list(loss), csf_rate_loss))
+        truth.draw(time_string=time_string, given_loss=loss)
+    return np.sum(loss) + csf_rate_loss
 
 
-if __name__ == "__main__":
-    # run()
+def run_spatial(params=None, starts=None, diffusion_list=None, time_string=None, silent_flag=False):
+    if not silent_flag:
+        if not time_string:
+            time_string = get_now_string()
+        print("Time String (as folder name): {}".format(time_string))
+
+    class_name = "CN"
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("--dataset", type=str, help="dataset strategy")
+    # parser.add_argument("--start", type=str, help="start strategy")
+    # parser.add_argument("--generation", type=int, help="generation")
+    # parser.add_argument("--pop_size", type=int, help="pop_size")
+    # parser.add_argument("--params", type=str, help="params file (in 'saves/')")
+    # parser.add_argument("--diff_strategy", type=str, help="C / D")
+    # opt = parser.parse_args()
     ct = ConstTruth(
         csf_folder_path="data/CSF/",
         pet_folder_path="data/PET/",
-        dataset="all"
+        dataset=opt.dataset,
+        start=opt.start,
     )
+    # given_params = np.load("saves/{}".format(opt.params))
+    truth = ADSolver(class_name, ct)
+    truth.step(params, starts, diffusion_list)
+    loss, csf_rate_loss = loss_func(params, starts, diffusion_list, ct)
+    if not silent_flag:
+        print("loss: {}".format(sum(loss) + csf_rate_loss))
+        print("loss parts: {} csf match loss: {}".format(list(loss), csf_rate_loss))
+        truth.draw(time_string=time_string, given_loss=loss)
+    return np.sum(loss) + csf_rate_loss
+
+if __name__ == "__main__":
+    ct = ConstTruthSpatial(
+        csf_folder_path="data/CSF/",
+        pet_folder_path="data/PET/",
+        # dataset="all"
+    )
+    save = np.load("saves/params_A2_2250.npy")
+    params = save[:46]
+    starts = save[-11:]
+    from spatial_simulation import SPATIAL_DIFFUSION_CONST
+
+    diffusion_list = np.asarray([SPATIAL_DIFFUSION_CONST[i]["init"] for i in range(5)])
+    # print(save.shape)
+    loss_func_spatial(params, starts, diffusion_list, ct, True, True)
+
+    # print(get_now_string())
+
     # record1 = loss_func(np.asarray([PARAMS[i]["init"] for i in range(PARAM_NUM)]), ct)
     # print(record1)
     # print("hhhh")
 #    params = np.load("saves/params_20221205_221101.npy")
 #    params = np.load("saves/params_20221129_201557.npy")
-    params = np.asarray([PARAMS[i]["init"] for i in range(PARAM_NUM)])
+#     params = np.asarray([PARAMS[i]["init"] for i in range(PARAM_NUM)])
 #    params = np.load("saves/params_20221202_095940.npy")
      
     # print(len(params))
@@ -511,5 +717,5 @@ if __name__ == "__main__":
     # record2 = loss_func(p, ct)
     # print(record2)
     # mt = MyTime()
-    run(params)
+    # run(params)
     # mt.print()

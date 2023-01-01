@@ -39,8 +39,8 @@ class Start:
         N = np.load(os.path.join(pet_data_path, "PET-N_{}.npy".format(self.class_name)))
         N_avg = np.mean(N).reshape(1)
 
-        # self.all = np.concatenate([Am, Ao, Af, ACSF, Tm, Tp, To, Tf, TCSF, TpCSF, N])
-        self.all = np.concatenate([Am_avg, Ao_avg, Af_avg, ACSF, Tm_avg, Tp_avg, To_avg, Tf_avg, TCSF, TpCSF, N_avg])
+        self.all = np.concatenate([Am, Ao, Af, ACSF, Tm, Tp, To, Tf, TCSF, TpCSF, N])
+        # self.all = np.concatenate([Am_avg, Ao_avg, Af_avg, ACSF, Tm_avg, Tp_avg, To_avg, Tf_avg, TCSF, TpCSF, N_avg])
 
 # class Start:
 #     Am = np.random.rand(Config.N_dim)  # 0.11 * np.ones([Config.N_dim])
