@@ -66,4 +66,4 @@ def spatial_simulation(split_n=10):
             best_loss = loss
 
 if __name__ == "__main__":
-    spatial_simulation(5)
+    spatial_simulation(10)
