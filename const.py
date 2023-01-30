@@ -63,84 +63,86 @@ DIFFUSION_NAME_LIST = ["d_Am", "d_Ao", "d_Tm", "d_Tp", "d_To"]
 #         "ub": 1.0,
 #     }
 # ]
-unit = 86400 * 365 * 1e-12
-assert opt.diff_strategy in ["C", "D"]
-if opt.diff_strategy == "C":
-    DIFFUSION = [
-     {
-            "id": 0,
-            "name": "d_Am",
-            "init": 1.0,
-            "lb": 0.1,
-            "ub": 10.0,
-        },
-        {
-            "id": 1,
-            "name": "d_Ao",
-            "init": 1.0,
-            "lb": 0.1,
-            "ub": 10.0,
-        },
-        {
-            "id": 2,
-            "name": "d_Tm",
-            "init": 1.0,
-            "lb": 0.1,
-            "ub": 10.0,
-        },
-        {
-            "id": 3,
-            "name": "d_Tp",
-            "init": 1.0,
-            "lb": 0.1,
-            "ub": 10.0,
-        },
-        {
-            "id": 4,
-            "name": "d_To",
-            "init": 1.0,
-            "lb": 0.1,
-            "ub": 10.0,
-        }
-    ]
-else:
-    DIFFUSION = [
-     {
-            "id": 0,
-            "name": "d_Am",
-            "init": 3.0 * 10 * unit,
-            "lb": 1.0 * 10 * unit,
-            "ub": 8.0 * 10 * unit,
-        },
-        {
-            "id": 1,
-            "name": "d_Ao",
-            "init": 0.4 * unit,
-            "lb": 0.2 * unit,
-            "ub": 0.8 * unit,
-        },
-        {
-            "id": 2,
-            "name": "d_Tm",
-            "init": 3.0 * unit,
-            "lb": 1.5 * unit,
-            "ub": 6.0 * unit,
-        },
-        {
-            "id": 3,
-            "name": "d_Tp",
-            "init": 11.0 * unit,
-            "lb": 5.5 * unit,
-            "ub": 22.0 * unit,
-        },
-        {
-            "id": 4,
-            "name": "d_To",
-            "init": 0.075 * unit,
-            "lb": 0.05 * unit,
-            "ub": 0.1 * unit,
-        }
-    ]
+
+# new comment
+# unit = 86400 * 365 * 1e-12
+# assert opt.diff_strategy in ["C", "D"]
+# if opt.diff_strategy == "C":
+#     DIFFUSION = [
+#      {
+#             "id": 0,
+#             "name": "d_Am",
+#             "init": 1.0,
+#             "lb": 0.1,
+#             "ub": 10.0,
+#         },
+#         {
+#             "id": 1,
+#             "name": "d_Ao",
+#             "init": 1.0,
+#             "lb": 0.1,
+#             "ub": 10.0,
+#         },
+#         {
+#             "id": 2,
+#             "name": "d_Tm",
+#             "init": 1.0,
+#             "lb": 0.1,
+#             "ub": 10.0,
+#         },
+#         {
+#             "id": 3,
+#             "name": "d_Tp",
+#             "init": 1.0,
+#             "lb": 0.1,
+#             "ub": 10.0,
+#         },
+#         {
+#             "id": 4,
+#             "name": "d_To",
+#             "init": 1.0,
+#             "lb": 0.1,
+#             "ub": 10.0,
+#         }
+#     ]
+# else:
+#     DIFFUSION = [
+#      {
+#             "id": 0,
+#             "name": "d_Am",
+#             "init": 3.0 * 10 * unit,
+#             "lb": 1.0 * 10 * unit,
+#             "ub": 8.0 * 10 * unit,
+#         },
+#         {
+#             "id": 1,
+#             "name": "d_Ao",
+#             "init": 0.4 * unit,
+#             "lb": 0.2 * unit,
+#             "ub": 0.8 * unit,
+#         },
+#         {
+#             "id": 2,
+#             "name": "d_Tm",
+#             "init": 3.0 * unit,
+#             "lb": 1.5 * unit,
+#             "ub": 6.0 * unit,
+#         },
+#         {
+#             "id": 3,
+#             "name": "d_Tp",
+#             "init": 11.0 * unit,
+#             "lb": 5.5 * unit,
+#             "ub": 22.0 * unit,
+#         },
+#         {
+#             "id": 4,
+#             "name": "d_To",
+#             "init": 0.075 * unit,
+#             "lb": 0.05 * unit,
+#             "ub": 0.1 * unit,
+#         }
+#     ]
 
 # assert opt.start in ["fixed", "ranged"]
 # if opt.start == "fixed":
