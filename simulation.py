@@ -183,7 +183,7 @@ def simulate(pop_size=50, generation=100, method="GA"):
     t1 = time.time()
     time_string_end = get_now_string()
     print("[run - multi_obj] End at {0} ({1:.2f} min)".format(time_string_end, (t1 - t0) / 60.0))
-
+    assert len(given_params) == PARAM_NUM + STARTS_NUM
     given_params_weights = given_params[:-STARTS_NUM]
     given_starts_weights = given_params[-STARTS_NUM:]
     original_diffusion = np.asarray([DIFFUSION[i]["init"] for i in range(DIFFUSION_NUM)])

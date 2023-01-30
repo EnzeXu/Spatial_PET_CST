@@ -43,27 +43,35 @@ SPATIAL_DIFFUSION_CONST = [
 ]
 
 def spatial_simulation(split_n=10):
+    from const import PARAM_NUM, STARTS_NUM
     ct = ConstTruthSpatial(
         csf_folder_path="data/CSF/",
         pet_folder_path="data/PET/",
         # dataset="all"
     )
-    save = np.load("saves/params_A2_2250.npy")
-    params = save[:46]
-    starts = save[-11:]
+    save = np.load("saves/params_20230113_102137_344977.npy")
+    print("overall input parameter length: {}".format(len(save)))
+    params = save[:PARAM_NUM]
+    starts = save[-STARTS_NUM:]
     diffusion_cuts = [np.linspace(SPATIAL_DIFFUSION_CONST[i]["lb"], SPATIAL_DIFFUSION_CONST[i]["ub"], split_n) for i in range(5)]
     diffusion_cuts = itertools.product(*diffusion_cuts)
     element_id = 0
     best_loss = 999999.0
+    best_element_id = -1
     best_time_string = None
+    save_file_path = "figure_spatial/record_20230130.csv"
     for element in tqdm(diffusion_cuts, total=split_n**5):
         # print(element)
         element_id += 1
         diffusion_list = np.asarray(element)
-        time_string, loss = loss_func_spatial(params, starts, diffusion_list, ct, True, False, element_id)
+        time_string, loss = loss_func_spatial(params, starts, diffusion_list, ct, save_file_path, silent=True, save_flag=True, element_id=element_id)
         if loss < best_loss:
             best_time_string = time_string
             best_loss = loss
+            best_element_id = element_id
+    print("best_element_id: {} best_time_string: {} best_loss: {}".format(best_element_id, best_time_string, best_loss))
+    with open(save_file_path, "a") as f:
+        f.write("{0},{1},{2}\n".format(best_element_id, best_time_string, best_loss))
 
 if __name__ == "__main__":
-    spatial_simulation(10)
+    spatial_simulation(5)

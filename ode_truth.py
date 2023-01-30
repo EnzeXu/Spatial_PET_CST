@@ -46,7 +46,9 @@ class ConstTruth:
         assert "csf_folder_path" in params and "pet_folder_path" in params, "please provide the save folder paths"
         assert "dataset" in params
         assert "start" in params
+        assert "tcsf_scaler" in params
         self.params = params
+        self.params["option"] = "option1"
         csf_folder_path, pet_folder_path = params["csf_folder_path"], params["pet_folder_path"]
         label_list = LABEL_LIST  # [[0, 2, 3, 4]]  # skip the second nodes (SMC)
         self.class_num = len(label_list)
@@ -100,6 +102,8 @@ class ConstTruthSpatial:
         assert "csf_folder_path" in params and "pet_folder_path" in params, "please provide the save folder paths"
         csf_folder_path, pet_folder_path = params["csf_folder_path"], params["pet_folder_path"]
         label_list = LABEL_LIST
+        self.params = dict()
+        self.params["option"] = "option1"
         self.y = dict()
         self.x = dict()
         self.x_all = np.asarray([3.0, 6.0, 9.0, 11.0, 12.0])
@@ -125,7 +129,7 @@ class ConstTruthSpatial:
 class ADSolver:
     def __init__(self, class_name, const_truth=None):
         self.n = 160  # Config.N_dim
-        self.L = Config.L
+        self.L = Config().L
         #        self.t = np.linspace(0, 10 - 0.1, 100)
         self.T = 12.01
         self.T_unit = 0.01
@@ -249,8 +253,10 @@ class ADSolver:
         # k_p1Am, k_p2Am, k_dAm, k_diA, k_cA, k_sA, k_dAo, k_yA, k_pTm, k_dTm, k_ph1, k_ph2, k_deph, k_diT, k_cT, k_sT, k_dTp, k_sTp, k_dTo, k_yT, k_yTp, k_AN, k_TN, k_a1A, k_a2A, k_a1T, k_a2T, K_mTA, K_mAT, K_mAN, K_mTN, K_mT2, K_mA2 \
         #     = iter(self.params)
 
-        k_p1Am, k_p2Am, k_dAm, k_diA, k_cA, k_sA, k_dAo, k_yA, k_pTm, k_dTm, k_ph1, k_ph2, k_deph, k_diT, k_cT, k_sT, k_dTp, k_sTp, k_dTo, k_yT, k_yTp, k_AN, k_TN, k_a1A, k_a2A, k_a1T, k_a2T, K_mTA, K_mAT, K_mAN, K_mTN, K_mT2, K_mA2, n_TA, n_cA, n_AT, n_cT, n_cTp, n_cTo, n_AN, n_TN, n_a1A, n_a2A, n_a1T, n_a2T, n_a1Tp \
+        k_p1Am, k_p2Am, k_dAm, k_diA, k_cA, k_sA, k_dAo, k_yA, k_pTm, k_dTm, k_ph1, k_ph2, k_deph, k_diT, k_cT, k_sT, k_dTp, k_sTp, k_dTo, k_yT, k_yTp, k_AN, k_TN, k_a1A, k_a2A, k_a1T, k_a2T, K_mTA, K_mAT, K_mAN, K_mTN, K_mT2, K_mA2, n_TA, n_cA, n_AT, n_cT, n_cTp, n_cTo, n_AN, n_TN, n_a1A, n_a2A, n_a1T, n_a2T, n_a1Tp, n_a2Tp, k_acsf, k_tcsf \
             = iter(self.params)
+        # k_p1Am, k_p2Am, k_dAm, k_diA, k_cA, k_sA, k_dAo, k_yA, k_pTm, k_dTm, k_ph1, k_ph2, k_deph, k_diT, k_cT, k_sT, k_dTp, k_sTp, k_dTo, k_yT, k_yTp, k_AN, k_TN, k_a1A, k_a2A, k_a1T, k_a2T, K_mTA, K_mAT, K_mAN, K_mTN, K_mT2, K_mA2, n_TA, n_cA, n_AT, n_cT, n_cTp, n_cTo, n_AN, n_TN, n_a1A, n_a2A, n_a1T, n_a2T, n_a1Tp, n_a2Tp, k_acsf, k_tcsf \
+        #     = iter(self.params)
 #        k_p1Am, k_p2Am, k_dAm, k_diA, k_cA, k_sA, k_dAo, k_yA, k_pTm, k_dTm, k_ph1, k_ph2, k_deph, k_diT, k_cT, k_sT, k_dTp, k_sTp, k_dTo, k_yT, k_yTp, k_AN, k_TN, k_a1A, k_a2A, k_a1T, k_a2T, K_mTA, K_mAT, K_mAN, K_mTN, K_mT2, K_mA2, n_TA, n_cA, n_AT, n_cT, n_cTp, n_cTo, n_AN, n_TN, n_a1A, n_a2A, n_a1T, n_a2T, n_a1Tp, K_cA \
 #            = iter(self.params)
 
@@ -291,61 +297,90 @@ class ADSolver:
 #                     numpy_safe_pow(Am, n_a1A)) - n_a2A * k_a2A * Af * numpy_safe_pow(Am, n_a2A) + (
 #                           n_a1A + n_a2A) * k_diA * Ao - n_cA * k_cA * (
 #                           numpy_safe_pow(Am, n_cA)) * Ao - k_sA * Am + d_Am * matmul_func(self.L, Am)
-        Am_ = k_p1Am + k_p2Am * 1.0 / (numpy_safe_pow(K_mTA, n_TA) / numpy_safe_pow(To, n_TA) + 1.0) - k_dAm * Am - n_a1A * k_a1A * (
-                     numpy_safe_pow(Am, n_a1A)) - n_a2A * k_a2A * Af * numpy_safe_pow(Am, n_a2A) + (
-                           n_a1A + n_a2A) * k_diA * Ao - n_cA * k_cA * (
-                           numpy_safe_pow(Am, n_cA)) * Ao - k_sA * Am + d_Am * matmul_func(self.L, Am)
-#        Am_ = k_p1Am + k_p2Am * 1.0 / (numpy_safe_pow(K_mTA, n_TA) / numpy_safe_pow(To, n_TA) + 1.0) - k_dAm * Am - n_a1A * k_a1A * (
-#                     numpy_safe_pow(Am, n_a1A)) - n_a2A * k_a2A * Af * numpy_safe_pow(Am, n_a2A) + (
-#                           n_a1A + n_a2A) * k_diA * Ao - n_cA * k_cA * Ao * 1.0 / (
-#                           numpy_safe_pow(K_cA, n_cA) / numpy_safe_pow(Am, n_cA) + 1.0)  - k_sA * Am + d_Am * matmul_func(self.L, Am)
-#        Am_ = k_p1Am + k_p2Am * 1.0 / (numpy_safe_pow(K_mTA, n_TA) / numpy_safe_pow(To, n_TA) + 1.0) - k_dAm * Am - n_a1A * k_a1A * (
-#                     numpy_safe_pow(Am, n_a1A)) - n_a2A * k_a2A * Af * numpy_safe_pow(Am, n_a2A) + (
-#                           n_a1A + n_a2A) * k_diA * Ao - n_cA * k_cA * (
-#                           numpy_safe_pow(Am, n_cA)) * Ao - k_sA * 1.0 / (1.0 +  numpy_safe_pow(K_ACSF, n_ACSF) / numpy_safe_pow(Am, n_ACSF)) + d_Am * matmul_func(self.L, Am)
+        Am_ = k_p1Am + k_p2Am * 1.0 / (
+                    numpy_safe_pow(K_mTA, n_TA) / numpy_safe_pow(To, n_TA) + 1.0) - k_dAm * Am - n_a1A * k_a1A * (
+                  numpy_safe_pow(Am, n_a1A)) - n_a2A * k_a2A * Af * numpy_safe_pow(Am, n_a2A) + (
+                      n_a1A + n_a2A) * k_diA * Ao - n_cA * k_cA * (
+                  numpy_safe_pow(Am, n_cA)) * Ao - k_sA * Am + d_Am * matmul_func(self.L, Am)
+        #        Am_ = k_p1Am + k_p2Am * 1.0 / (numpy_safe_pow(K_mTA, n_TA) / numpy_safe_pow(To, n_TA) + 1.0) - k_dAm * Am - n_a1A * k_a1A * (
+        #                     numpy_safe_pow(Am, n_a1A)) - n_a2A * k_a2A * Af * numpy_safe_pow(Am, n_a2A) + (
+        #                           n_a1A + n_a2A) * k_diA * Ao - n_cA * k_cA * Ao * 1.0 / (
+        #                           numpy_safe_pow(K_cA, n_cA) / numpy_safe_pow(Am, n_cA) + 1.0)  - k_sA * Am + d_Am * matmul_func(self.L, Am)
+        #        Am_ = k_p1Am + k_p2Am * 1.0 / (numpy_safe_pow(K_mTA, n_TA) / numpy_safe_pow(To, n_TA) + 1.0) - k_dAm * Am - n_a1A * k_a1A * (
+        #                     numpy_safe_pow(Am, n_a1A)) - n_a2A * k_a2A * Af * numpy_safe_pow(Am, n_a2A) + (
+        #                           n_a1A + n_a2A) * k_diA * Ao - n_cA * k_cA * (
+        #                           numpy_safe_pow(Am, n_cA)) * Ao - k_sA * 1.0 / (1.0 +  numpy_safe_pow(K_ACSF, n_ACSF) / numpy_safe_pow(Am, n_ACSF)) + d_Am * matmul_func(self.L, Am)
 
-        Ao_ = - k_dAo * Ao + k_a1A * numpy_safe_pow(Am, n_a1A) + k_a2A * Af * numpy_safe_pow(Am, n_a2A) - k_diA * Ao - k_cA * numpy_safe_pow(Am, n_cA) * Ao + d_Ao * matmul_func(self.L,
-                                                                                                               Ao)
-#        Ao_ = - k_dAo * Ao + k_a1A * numpy_safe_pow(Am, n_a1A) + k_a2A * Af * numpy_safe_pow(Am, n_a2A) - k_diA * Ao - k_cA * Ao * 1.0 / (
-#                           numpy_safe_pow(K_cA, n_cA) / numpy_safe_pow(Am, n_cA) + 1.0) + d_Ao * matmul_func(self.L,
-#                                                                                                               Ao)
+        Ao_ = - k_dAo * Ao + k_a1A * numpy_safe_pow(Am, n_a1A) + k_a2A * Af * numpy_safe_pow(Am,
+                                                                                             n_a2A) - k_diA * Ao - k_cA * numpy_safe_pow(
+            Am, n_cA) * Ao + d_Ao * matmul_func(self.L,
+                                                Ao)
+        #        Ao_ = - k_dAo * Ao + k_a1A * numpy_safe_pow(Am, n_a1A) + k_a2A * Af * numpy_safe_pow(Am, n_a2A) - k_diA * Ao - k_cA * Ao * 1.0 / (
+        #                           numpy_safe_pow(K_cA, n_cA) / numpy_safe_pow(Am, n_cA) + 1.0) + d_Ao * matmul_func(self.L,
+        #                                                                                                               Ao)
 
-#        Ao_ = - k_dAo * Ao + k_a1A * numpy_safe_pow(Am, n_a1A) + k_a2A * Af * 1.0 / (
-#                    1.0 + numpy_safe_pow(K_mA2, n_a2A) / numpy_safe_pow(Am, n_a2A)) - k_diA * Ao - k_cA * numpy_safe_pow(Am, n_cA) * Ao + d_Ao * matmul_func(self.L,
-#                                                                                                               Ao)
+        #        Ao_ = - k_dAo * Ao + k_a1A * numpy_safe_pow(Am, n_a1A) + k_a2A * Af * 1.0 / (
+        #                    1.0 + numpy_safe_pow(K_mA2, n_a2A) / numpy_safe_pow(Am, n_a2A)) - k_diA * Ao - k_cA * numpy_safe_pow(Am, n_cA) * Ao + d_Ao * matmul_func(self.L,
+        #                                                                                                               Ao)
         Af_ = k_cA * numpy_safe_pow(Am, n_cA) * Ao
-#        Af_ = k_cA * Ao * 1.0 / (numpy_safe_pow(K_cA, n_cA) / numpy_safe_pow(Am, n_cA) + 1.0)
-#        IACSF_ = k_sA * sum_func(Am) - k_I2CSF * IACSF
-#        ACSF_ = k_I2CSF * IACSF- k_yA * ACSF
-        ACSF_ = k_sA * sum_func(Am) - k_yA * ACSF
-#        ACSF_ = k_sA * sum_func(Am**2) - k_yA * ACSF   #NO###Am needs to be changed simultaneously
-#        ACSF_ = k_sA * sum_func(1.0 / (1.0 +  numpy_safe_pow(K_ACSF, n_ACSF) / numpy_safe_pow(Am, n_ACSF))) - k_yA * ACSF
+        #        Af_ = k_cA * Ao * 1.0 / (numpy_safe_pow(K_cA, n_cA) / numpy_safe_pow(Am, n_cA) + 1.0)
+        #        IACSF_ = k_sA * sum_func(Am) - k_I2CSF * IACSF
+        #        ACSF_ = k_I2CSF * IACSF- k_yA * ACSF
+        ACSF_ = k_sA * sum_func(Am) - k_yA * ACSF  # v0118 sqrt ! square ! log ! hill !
+        #        ACSF_ = k_sA * sum_func(Am**2) - k_yA * ACSF   #NO###Am needs to be changed simultaneously
+        #        ACSF_ = k_sA * sum_func(1.0 / (1.0 +  numpy_safe_pow(K_ACSF, n_ACSF) / numpy_safe_pow(Am, n_ACSF))) - k_yA * ACSF
+        assert self.const_truth.params["option"] in ["option1", "option2"]
+        if self.const_truth.params["option"] == "option1":
+            Tm_ = k_pTm - k_dTm * Tm - (
+                    k_ph1 + k_ph2 * 1.0 / (numpy_safe_pow(K_mAT, n_AT) / numpy_safe_pow(Ao,
+                                                                                        n_AT) + 1.0)) * Tm + k_deph * Tp - n_a1T * k_a1T * numpy_safe_pow(
+                Tm, n_a1T) * numpy_safe_pow(Tp, n_a1Tp) - n_a2T * k_a2T * Tf * 1.0 / (
+                          1.0 + numpy_safe_pow(K_mT2, n_a2T) / numpy_safe_pow((Tm + Tp), n_a2T)) + (
+                              n_a1T + n_a2T) * k_diT * To - n_cT * k_cT * numpy_safe_pow(
+                Tm, n_cT) * (numpy_safe_pow(Tp, n_cTp)) * To - k_sT * Tm + d_Tm * matmul_func(self.L, Tm)
+            Tp_ = -k_dTp * Tp + (
+                    k_ph1 + k_ph2 * 1.0 / (numpy_safe_pow(K_mAT, n_AT) / numpy_safe_pow(Ao,
+                                                                                        n_AT) + 1.0)) * Tm - k_deph * Tp - n_a1Tp * k_a1T * (
+                      numpy_safe_pow(Tm, n_a1T)) * numpy_safe_pow(Tp, n_a1Tp) - n_a2T * k_a2T * Tf * 1.0 / (
+                          1.0 + numpy_safe_pow(K_mT2, n_a2T) / numpy_safe_pow((Tm + Tp), n_a2T)) + (
+                              n_a1Tp + n_a2T) * k_diT * To - n_cTp * k_cT * numpy_safe_pow(
+                Tm, n_cT) * numpy_safe_pow(Tp, n_cTp) * To - k_sTp * Tp + d_Tp * matmul_func(self.L, Tp)
 
-        Tm_ = k_pTm - k_dTm * Tm - (
-                    k_ph1 + k_ph2 * 1.0 / (numpy_safe_pow(K_mAT, n_AT) / numpy_safe_pow(Ao, n_AT) + 1.0)) * Tm + k_deph * Tp - n_a1T * k_a1T * numpy_safe_pow(
-                          Tm, n_a1T) * numpy_safe_pow(Tp, n_a1Tp) - n_a2T * k_a2T * Tf * 1.0 / (
-                          1.0 + numpy_safe_pow(K_mT2, n_a2T) / numpy_safe_pow((Tm + Tp), n_a2T)) + (n_a1T + n_a2T) * k_diT * To - n_cT * k_cT * numpy_safe_pow(
-                          Tm, n_cT) * (numpy_safe_pow(Tp,n_cTp)) * To - k_sT * Tm + d_Tm * matmul_func(self.L, Tm)
-        Tp_ = -k_dTp * Tp + (
-                    k_ph1 + k_ph2 * 1.0 / (numpy_safe_pow(K_mAT, n_AT) / numpy_safe_pow(Ao, n_AT) + 1.0)) * Tm - k_deph * Tp - n_a1Tp * k_a1T * (
-                          numpy_safe_pow(Tm, n_a1T)) * numpy_safe_pow(Tp, n_a1Tp) - n_a2T * k_a2T * Tf * 1.0 / (
-                          1.0 + numpy_safe_pow(K_mT2, n_a2T) / numpy_safe_pow((Tm + Tp), n_a2T)) + (n_a1Tp + n_a2T) * k_diT * To - n_cTp * k_cT * numpy_safe_pow(
-                          Tm, n_cT) * numpy_safe_pow(Tp, n_cTp) * To - k_sTp * Tp + d_Tp * matmul_func(self.L, Tp)
+            To_ = - k_dTo * To + k_a1T * numpy_safe_pow(Tm, n_a1T) * numpy_safe_pow(Tp, n_a1Tp) + k_a2T * Tf * 1.0 / (
+                    1.0 + numpy_safe_pow(K_mT2, n_a2T) / numpy_safe_pow((Tm + Tp),
+                                                                        n_a2T)) - k_diT * To - k_cT * numpy_safe_pow(Tm,
+                                                                                                                     n_cT) * (
+                      numpy_safe_pow(Tp, n_cTp)) * To + d_To * matmul_func(self.L, To)
+        else:  # option2
+            Tm_ = k_pTm - k_dTm * Tm - (k_ph1 + k_ph2 * 1.0 / (numpy_safe_pow(K_mAT, n_AT) / numpy_safe_pow(Ao,
+                                                                                                            n_AT) + 1.0)) * Tm + k_deph * Tp - n_a1T * k_a1T * numpy_safe_pow(
+                Tm, n_a1T) * numpy_safe_pow(Tp, n_a1Tp) - n_a2T * k_a2T * Tf * numpy_safe_pow(Tm,
+                                                                                              n_a2T) * numpy_safe_pow(
+                Tp, n_a2Tp) + (n_a1T + n_a2T) * k_diT * To - n_cT * k_cT * numpy_safe_pow(
+                Tm, n_cT) * (numpy_safe_pow(Tp, n_cTp)) * To - k_sT * Tm + d_Tm * matmul_func(self.L, Tm)
 
-        To_ = - k_dTo * To + k_a1T * numpy_safe_pow(Tm, n_a1T) * numpy_safe_pow(Tp, n_a1Tp) + k_a2T * Tf * 1.0 / (
-                    1.0 + numpy_safe_pow(K_mT2, n_a2T) / numpy_safe_pow((Tm + Tp), n_a2T)) - k_diT * To - k_cT * numpy_safe_pow(Tm, n_cT) * (
-                          numpy_safe_pow(Tp, n_cTp)) * To + d_To * matmul_func(self.L, To)
+            Tp_ = -k_dTp * Tp + (k_ph1 + k_ph2 * 1.0 / (numpy_safe_pow(K_mAT, n_AT) / numpy_safe_pow(Ao,
+                                                                                                     n_AT) + 1.0)) * Tm - k_deph * Tp - n_a1Tp * k_a1T * (
+                      numpy_safe_pow(Tm, n_a1T)) * numpy_safe_pow(Tp, n_a1Tp) - n_a2Tp * k_a2T * Tf * numpy_safe_pow(Tm,
+                                                                                                                     n_a2T) * numpy_safe_pow(
+                Tp, n_a2Tp) + (n_a1Tp + n_a2Tp) * k_diT * To - n_cTp * k_cT * numpy_safe_pow(
+                Tm, n_cT) * numpy_safe_pow(Tp, n_cTp) * To - k_sTp * Tp + d_Tp * matmul_func(self.L, Tp)
+
+            To_ = - k_dTo * To + k_a1T * numpy_safe_pow(Tm, n_a1T) * numpy_safe_pow(Tp, n_a1Tp) + k_a2T * Tf * 1.0 / (
+                    1.0 + numpy_safe_pow(K_mT2, n_a2T) / numpy_safe_pow((Tm + Tp),
+                                                                        n_a2T)) - k_diT * To - k_cT * numpy_safe_pow(Tm,
+                                                                                                                     n_cT) * (
+                      numpy_safe_pow(Tp, n_cTp)) * To + d_To * matmul_func(self.L, To)
 
         Tf_ = k_cT * numpy_safe_pow(Tm, n_cT) * numpy_safe_pow(Tp, n_cTp) * numpy_safe_pow(To, n_cTo)
 
-        TCSF_ = k_sT * sum_func(Tm) - k_yT * TCSF
-#        TCSF_ = k_sT * sum_func(Tm**2) - k_yT * TCSF
-        TpCSF_ = k_sTp * sum_func(Tp) - k_yTp * TpCSF
+        TCSF_ = k_sT * sum_func(Tm) - k_yT * TCSF  # v0118 sqrt !
+        #        TCSF_ = k_sT * sum_func(Tm**2) - k_yT * TCSF
+        TpCSF_ = k_sTp * sum_func(Tp) - k_yTp * TpCSF  # v0118 sqrt !
 
         N_ = k_AN * 1.0 / (numpy_safe_pow(K_mAN, n_AN) / numpy_safe_pow((Ao + Af), n_AN) + 1.0) + k_TN * 1.0 / (
-                    numpy_safe_pow(K_mTN, n_TN) / numpy_safe_pow((To + Tf), n_TN) + 1.0)
+                numpy_safe_pow(K_mTN, n_TN) / numpy_safe_pow((To + Tf), n_TN) + 1.0)
 
-       
         dy = np.concatenate([Am_, Ao_, Af_, ACSF_, Tm_, Tp_, To_, Tf_, TCSF_, TpCSF_, N_])
         # # print(dy.shape)
         # mt.time_end()
@@ -491,10 +526,10 @@ def loss_func(params, starts_weight, diffusion_list, ct):
 
 
 
-def loss_func_spatial(params, starts_weight, diffusion_list, ct_spatial: ConstTruthSpatial, silent=True, save_flag=False, element_id=None):
-    ad = ADSolver("CN")
+def loss_func_spatial(params, starts_weight, diffusion_list, ct_spatial: ConstTruthSpatial, save_file_path, silent=True, save_flag=False, element_id=None):
+    ad = ADSolver("CN", ct_spatial)
     ad.step_spatial(params, starts_weight, diffusion_list)
-    output = ad.get_output_spatial()
+    # output = ad.get_output_spatial()
     # print([item.shape for item in output])
     targets = ["APET", "TPET", "NPET"]
     record_pattern_penalty = np.zeros(len(targets))
@@ -522,14 +557,16 @@ def loss_func_spatial(params, starts_weight, diffusion_list, ct_spatial: ConstTr
             ct_spatial.const_min_max_scale[one_target][1],
         )
         record_pattern_penalty[i] = np.mean((predict_points_scaled - target_points_scaled) ** 2)
+    time_string = get_now_string()
     if not silent:
+        print("time_string:", time_string)
         print("record_rate:", record_rate)
         print("record_rate_penalty:", record_rate_penalty)
         print("record_pattern_penalty:", record_pattern_penalty)
-    time_string = get_now_string()
+
     loss = np.sum(record_pattern_penalty) + np.sum(record_rate_penalty)
-    with open("figure_spatial/record_20230101.txt", "a") as f:
-        f.write("{0}, {1}, {2:.9f}, {3:.9f}, {4:.9f}, {5:.6e}, {6:.6e}, {7:.6e}, {8:.6e}, {9:.6e}\n".format(
+    with open(save_file_path, "a") as f:
+        f.write("{0},{1},{2:.9f},{3:.9f},{4:.9f},{5:.6e},{6:.6e},{7:.6e},{8:.6e},{9:.6e}\n".format(
             element_id,
             time_string,
             loss,
@@ -548,7 +585,7 @@ def loss_func_spatial(params, starts_weight, diffusion_list, ct_spatial: ConstTr
         np.save("{}/diffusion_list.npy".format(folder_path), np.asarray(diffusion_list))
         np.save("{}/params.npy".format(folder_path), np.asarray(params))
         np.save("{}/starts_weight.npy".format(folder_path), np.asarray(starts_weight))
-        fig = plt.figure(figsize=(4 * len(LABEL_LIST), 3 * len(targets)))
+        fig = plt.figure(figsize=(8 * len(LABEL_LIST), 3 * len(targets)))
 
         for i, one_target in enumerate(targets):
             target_points = np.asarray(ct_spatial.y[one_target])
@@ -556,7 +593,7 @@ def loss_func_spatial(params, starts_weight, diffusion_list, ct_spatial: ConstTr
             index_fixed = (t_fixed / ad.T_unit).astype(int)
             predict_points = np.asarray(ad.output_spatial[i][index_fixed])
             for j in range(len(LABEL_LIST)):
-                ax = fig.add_subplot(len(LABEL_LIST), len(targets), i * len(LABEL_LIST) + j + 1)
+                ax = fig.add_subplot(len(targets), len(LABEL_LIST), i * len(LABEL_LIST) + j + 1)
                 ax.set_title("{}-{}".format(one_target, LABEL_LIST[j]))
                 ax.plot(range(1, 161), target_points[j, :], c="black", marker="o", markersize=1, linewidth=1)
                 ax2 = ax.twinx()
@@ -648,36 +685,36 @@ def run(params=None, starts=None, diffusion_list=None, time_string=None, silent_
     return np.sum(loss) + csf_rate_loss
 
 
-def run_spatial(params=None, starts=None, diffusion_list=None, time_string=None, silent_flag=False):
-    if not silent_flag:
-        if not time_string:
-            time_string = get_now_string()
-        print("Time String (as folder name): {}".format(time_string))
-
-    class_name = "CN"
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument("--dataset", type=str, help="dataset strategy")
-    # parser.add_argument("--start", type=str, help="start strategy")
-    # parser.add_argument("--generation", type=int, help="generation")
-    # parser.add_argument("--pop_size", type=int, help="pop_size")
-    # parser.add_argument("--params", type=str, help="params file (in 'saves/')")
-    # parser.add_argument("--diff_strategy", type=str, help="C / D")
-    # opt = parser.parse_args()
-    ct = ConstTruth(
-        csf_folder_path="data/CSF/",
-        pet_folder_path="data/PET/",
-        dataset=opt.dataset,
-        start=opt.start,
-    )
-    # given_params = np.load("saves/{}".format(opt.params))
-    truth = ADSolver(class_name, ct)
-    truth.step(params, starts, diffusion_list)
-    loss, csf_rate_loss = loss_func(params, starts, diffusion_list, ct)
-    if not silent_flag:
-        print("loss: {}".format(sum(loss) + csf_rate_loss))
-        print("loss parts: {} csf match loss: {}".format(list(loss), csf_rate_loss))
-        truth.draw(time_string=time_string, given_loss=loss)
-    return np.sum(loss) + csf_rate_loss
+# def run_spatial(params=None, starts=None, diffusion_list=None, time_string=None, silent_flag=False):
+#     if not silent_flag:
+#         if not time_string:
+#             time_string = get_now_string()
+#         print("Time String (as folder name): {}".format(time_string))
+#
+#     class_name = "CN"
+#     # parser = argparse.ArgumentParser()
+#     # parser.add_argument("--dataset", type=str, help="dataset strategy")
+#     # parser.add_argument("--start", type=str, help="start strategy")
+#     # parser.add_argument("--generation", type=int, help="generation")
+#     # parser.add_argument("--pop_size", type=int, help="pop_size")
+#     # parser.add_argument("--params", type=str, help="params file (in 'saves/')")
+#     # parser.add_argument("--diff_strategy", type=str, help="C / D")
+#     # opt = parser.parse_args()
+#     ct = ConstTruth(
+#         csf_folder_path="data/CSF/",
+#         pet_folder_path="data/PET/",
+#         dataset=opt.dataset,
+#         start=opt.start,
+#     )
+#     # given_params = np.load("saves/{}".format(opt.params))
+#     truth = ADSolver(class_name, ct)
+#     truth.step(params, starts, diffusion_list)
+#     loss, csf_rate_loss = loss_func(params, starts, diffusion_list, ct)
+#     if not silent_flag:
+#         print("loss: {}".format(sum(loss) + csf_rate_loss))
+#         print("loss parts: {} csf match loss: {}".format(list(loss), csf_rate_loss))
+#         truth.draw(time_string=time_string, given_loss=loss)
+#     return np.sum(loss) + csf_rate_loss
 
 if __name__ == "__main__":
     ct = ConstTruthSpatial(
@@ -690,9 +727,15 @@ if __name__ == "__main__":
     starts = save[-11:]
     from spatial_simulation import SPATIAL_DIFFUSION_CONST
 
-    diffusion_list = np.asarray([SPATIAL_DIFFUSION_CONST[i]["init"] for i in range(5)])
+    # diffusion_list = np.asarray([SPATIAL_DIFFUSION_CONST[i]["init"] for i in range(5)])
+    # diffusion_list = np.asarray([2.52e-03, 6.31e-06, 1.89e-04, 4.34e-04, 1.97e-06])
+    diffusion_list = np.asarray([3.15e-04, 2.52e-05, 1.54e-04, 5.64e-04, 1.97e-06])
+
+
+
+
     # print(save.shape)
-    loss_func_spatial(params, starts, diffusion_list, ct, True, True)
+    loss_func_spatial(params, starts, diffusion_list, ct, False, True)
 
     # print(get_now_string())
 

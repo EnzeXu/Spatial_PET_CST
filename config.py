@@ -5,29 +5,31 @@ from const import LABEL_ID
 
 
 class Config:
-    N_dim = 160
-    L = np.identity(N_dim)
+    def __init__(self):
+        self.N_dim = 160
+        self.L = np.load("data/Laplacian/network_laplacian_all.npy")
 
 
 class Start:
     def __init__(self, class_name=None, pet_data_path="data/PET/", csf_data_path="data/CSF/"):
         assert class_name in ["CN", "SMC", "EMCI", "LMCI", "AD"], "param class_name must in ['CN', 'SMC', 'EMCI', 'LMCI', 'AD'], but got \"{}\"!".format(class_name)
         self.class_name = class_name
+        self.config = Config()
         csf_data = np.load(os.path.join(csf_data_path, "CSF_{}.npy".format(self.class_name)))
-        Am = np.random.uniform(1e-4, 5e-4, size=Config.N_dim)
+        Am = np.random.uniform(1e-4, 5e-4, size=self.config.N_dim)
         Am_avg = np.mean(Am).reshape(1)
-        Ao = np.random.uniform(0, 1e-4, size=Config.N_dim)
+        Ao = np.random.uniform(0, 1e-4, size=self.config.N_dim)
         Ao_avg = np.mean(Ao).reshape(1)
         Af = np.load(os.path.join(pet_data_path, "PET-A_{}.npy".format(self.class_name)))
         Af = Af*1e-4
         Af_avg = np.mean(Af).reshape(1)
         ACSF = np.expand_dims(csf_data[0], axis=0)  # 0.14 * np.ones(1)
         ACSF = ACSF*1e-2*0.4
-        Tm = np.random.uniform(1e-4, 3e-4, size=Config.N_dim)  ##1020 TAU concentration in neuronal cells is around 2uM - AD26
+        Tm = np.random.uniform(1e-4, 3e-4, size=self.config.N_dim)  ##1020 TAU concentration in neuronal cells is around 2uM - AD26
         Tm_avg = np.mean(Tm).reshape(1)
-        Tp = np.random.uniform(0, 1e-4, size=Config.N_dim)
+        Tp = np.random.uniform(0, 1e-4, size=self.config.N_dim)
         Tp_avg = np.mean(Tp).reshape(1)
-        To = np.random.uniform(0, 1e-4, size=Config.N_dim)
+        To = np.random.uniform(0, 1e-4, size=self.config.N_dim)
         To_avg = np.mean(To).reshape(1)
         Tf = np.load(os.path.join(pet_data_path, "PET-T_{}.npy".format(self.class_name)))
         Tf = Tf*2*1e-4

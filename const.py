@@ -7,7 +7,7 @@ LABEL_ID = {
     "LMCI": 3,
     "AD": 4
 }
-PARAM_NUM = 51 - 5
+PARAM_NUM = 51 - 5 + 1 + 2
 #PARAM_NUM = 51 - 4
 UPFOLD = 10
 LOWFOLD = 0.1
@@ -64,83 +64,83 @@ DIFFUSION_NAME_LIST = ["d_Am", "d_Ao", "d_Tm", "d_Tp", "d_To"]
 #     }
 # ]
 unit = 86400 * 365 * 1e-12
-# assert opt.diff_strategy in ["C", "D"]
-# if opt.diff_strategy == "C":
-#     DIFFUSION = [
-#      {
-#             "id": 0,
-#             "name": "d_Am",
-#             "init": 1.0,
-#             "lb": 0.5,
-#             "ub": 2.0,
-#         },
-#         {
-#             "id": 1,
-#             "name": "d_Ao",
-#             "init": 1.0,
-#             "lb": 0.5,
-#             "ub": 2.0,
-#         },
-#         {
-#             "id": 2,
-#             "name": "d_Tm",
-#             "init": 1.0,
-#             "lb": 0.5,
-#             "ub": 2.0,
-#         },
-#         {
-#             "id": 3,
-#             "name": "d_Tp",
-#             "init": 1.0,
-#             "lb": 0.5,
-#             "ub": 2.0,
-#         },
-#         {
-#             "id": 4,
-#             "name": "d_To",
-#             "init": 1.0,
-#             "lb": 0.5,
-#             "ub": 2.0,
-#         }
-#     ]
-# else:
-#     DIFFUSION = [
-#      {
-#             "id": 0,
-#             "name": "d_Am",
-#             "init": 3.0 * 10 * unit,
-#             "lb": 1.0 * 10 * unit,
-#             "ub": 8.0 * 10 * unit,
-#         },
-#         {
-#             "id": 1,
-#             "name": "d_Ao",
-#             "init": 0.4 * unit,
-#             "lb": 0.2 * unit,
-#             "ub": 0.8 * unit,
-#         },
-#         {
-#             "id": 2,
-#             "name": "d_Tm",
-#             "init": 3.0 * unit,
-#             "lb": 1.5 * unit,
-#             "ub": 6.0 * unit,
-#         },
-#         {
-#             "id": 3,
-#             "name": "d_Tp",
-#             "init": 11.0 * unit,
-#             "lb": 5.5 * unit,
-#             "ub": 22.0 * unit,
-#         },
-#         {
-#             "id": 4,
-#             "name": "d_To",
-#             "init": 0.075 * unit,
-#             "lb": 0.05 * unit,
-#             "ub": 0.1 * unit,
-#         }
-#     ]
+assert opt.diff_strategy in ["C", "D"]
+if opt.diff_strategy == "C":
+    DIFFUSION = [
+     {
+            "id": 0,
+            "name": "d_Am",
+            "init": 1.0,
+            "lb": 0.1,
+            "ub": 10.0,
+        },
+        {
+            "id": 1,
+            "name": "d_Ao",
+            "init": 1.0,
+            "lb": 0.1,
+            "ub": 10.0,
+        },
+        {
+            "id": 2,
+            "name": "d_Tm",
+            "init": 1.0,
+            "lb": 0.1,
+            "ub": 10.0,
+        },
+        {
+            "id": 3,
+            "name": "d_Tp",
+            "init": 1.0,
+            "lb": 0.1,
+            "ub": 10.0,
+        },
+        {
+            "id": 4,
+            "name": "d_To",
+            "init": 1.0,
+            "lb": 0.1,
+            "ub": 10.0,
+        }
+    ]
+else:
+    DIFFUSION = [
+     {
+            "id": 0,
+            "name": "d_Am",
+            "init": 3.0 * 10 * unit,
+            "lb": 1.0 * 10 * unit,
+            "ub": 8.0 * 10 * unit,
+        },
+        {
+            "id": 1,
+            "name": "d_Ao",
+            "init": 0.4 * unit,
+            "lb": 0.2 * unit,
+            "ub": 0.8 * unit,
+        },
+        {
+            "id": 2,
+            "name": "d_Tm",
+            "init": 3.0 * unit,
+            "lb": 1.5 * unit,
+            "ub": 6.0 * unit,
+        },
+        {
+            "id": 3,
+            "name": "d_Tp",
+            "init": 11.0 * unit,
+            "lb": 5.5 * unit,
+            "ub": 22.0 * unit,
+        },
+        {
+            "id": 4,
+            "name": "d_To",
+            "init": 0.075 * unit,
+            "lb": 0.05 * unit,
+            "ub": 0.1 * unit,
+        }
+    ]
 
 # assert opt.start in ["fixed", "ranged"]
 # if opt.start == "fixed":
@@ -710,50 +710,26 @@ PARAMS = [
         "ub": 12.0
     },
     {
-#        "id": 46,
-#        "name": "K_cA",#"d_Am",
-#        "init": 0.5,
-#        "lb": 0.05,
-#        "ub": 5,
         "id": 46,
-        "name": "d_Am",
-        "init": 1.0,
+        "name": "n_a2Tp",
+        "init": 2.0,
         "lb": 1.0,
-        "ub": 12.0,
+        "ub": 12.0
     },
     {
-#        "id": 47,
-#        "name": "K_ACSF",#"d_Ao",
-#        "init": 0.5,#1.0,
-#        "lb": 0.5 * 0.5,#1.0,
-#        "ub": 0.5 * 2,#1.0,
         "id": 47,
-        "name": "d_Ao",
-        "init": 1.0,
-        "lb": 1.0,
-        "ub": 1.0,
+        "name": "k_acsf",
+        "init": 2e-2,
+        "lb": 2e-2 * LOWFOLD,
+        "ub": 2e-2 * UPFOLD
     },
     {
         "id": 48,
-        "name": "d_Tm",
-        "init": 1.0,
-        "lb": 1.0,
-        "ub": 1.0,
+        "name": "k_tcsf",
+        "init": 2e-2,
+        "lb": 2e-2 * LOWFOLD,
+        "ub": 2e-2 * UPFOLD
     },
-    {
-        "id": 49,
-        "name": "d_Tp",
-        "init": 1.0,
-        "lb": 1.0,
-        "ub": 1.0,
-    },
-    {
-        "id": 50,
-        "name": "d_To",
-        "init": 1.0,
-        "lb": 1.0,
-        "ub": 1.0,
-    }
 ]
 
 """
