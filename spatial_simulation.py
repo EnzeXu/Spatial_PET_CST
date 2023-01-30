@@ -59,7 +59,7 @@ def spatial_simulation(split_n=10):
     best_loss = 999999.0
     best_element_id = -1
     best_time_string = None
-    save_file_path = "figure_spatial/record_20230130.csv"
+    save_file_path = "figure_spatial/record_20230130-4.csv"
     for element in tqdm(diffusion_cuts, total=split_n**5):
         # print(element)
         element_id += 1
@@ -74,4 +74,4 @@ def spatial_simulation(split_n=10):
         f.write("{0},{1},{2}\n".format(best_element_id, best_time_string, best_loss))
 
 if __name__ == "__main__":
-    spatial_simulation(5)
+    spatial_simulation(4)
