@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name="spatial_simulation"
 #SBATCH --partition=medium
-#SBATCH --nodes=16
+#SBATCH --nodes=10
 #SBATCH --time=2-00:00:00
 #SBATCH --mem=32GB
 #SBATCH --mail-user=xue20@wfu.edu
