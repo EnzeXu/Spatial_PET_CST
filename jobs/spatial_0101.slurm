@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --job-name="spatial_simulation"
 #SBATCH --partition=medium
-#SBATCH --nodes=8
+#SBATCH --nodes=16
 #SBATCH --time=2-00:00:00
-#SBATCH --mem=16GB
+#SBATCH --mem=32GB
 #SBATCH --mail-user=xue20@wfu.edu
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --output="jobs_oe/spatial_simulation-%j.o"
