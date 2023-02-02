@@ -15,14 +15,14 @@ STARTS_NUM = 11
 STARTS_NAME_LIST = ["Am", "Ao", "Af", "ACSF", "Tm", "Tp", "To", "Tf", "TCSF", "TpCSF", "N"]
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, help="dataset strategy")
-parser.add_argument("--start", type=str, help="start strategy")
-parser.add_argument("--generation", type=int, help="generation")
-parser.add_argument("--pop_size", type=int, help="pop_size")
-parser.add_argument("--params", type=str, help="params file (in 'saves/')")
-parser.add_argument("--diff_strategy", type=str, help="C / D")
-opt = parser.parse_args()
+# parser = argparse.ArgumentParser()
+# parser.add_argument("--dataset", type=str, help="dataset strategy")
+# parser.add_argument("--start", type=str, help="start strategy")
+# parser.add_argument("--generation", type=int, help="generation")
+# parser.add_argument("--pop_size", type=int, help="pop_size")
+# parser.add_argument("--params", type=str, help="params file (in 'saves/')")
+# parser.add_argument("--diff_strategy", type=str, help="C / D")
+# opt = parser.parse_args()
 
 DIFFUSION_NUM = 5
 DIFFUSION_NAME_LIST = ["d_Am", "d_Ao", "d_Tm", "d_Tp", "d_To"]

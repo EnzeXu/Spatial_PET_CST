@@ -102,6 +102,7 @@ class ConstTruthSpatial:
         assert "csf_folder_path" in params and "pet_folder_path" in params, "please provide the save folder paths"
         csf_folder_path, pet_folder_path = params["csf_folder_path"], params["pet_folder_path"]
         label_list = LABEL_LIST
+        self.args = params["args"]
         self.params = dict()
         self.params["option"] = "option1"
         self.y = dict()
@@ -129,13 +130,16 @@ class ConstTruthSpatial:
 class ADSolver:
     def __init__(self, class_name, const_truth=None):
         self.n = 160  # Config.N_dim
-        self.L = Config().L
+        # self.L = Config().L
         #        self.t = np.linspace(0, 10 - 0.1, 100)
         self.T = 12.01
         self.T_unit = 0.01
         self.t = np.linspace(0.0, self.T - self.T_unit, int(self.T / self.T_unit))  # expand time
+        # print(self.t[:10], "...", self.t[-10:])
         self.class_name = class_name
         self.const_truth = const_truth
+        self.Ls = Config(self.const_truth.args.threshold).Ls
+        self.L = None
         self.y0 = Start(class_name).all
         # print("ODE size: {}".format(self.y0.shape))
 
@@ -236,8 +240,19 @@ class ADSolver:
         # return [APET, TPET, NPET, ACSF, TpCSF, TCSF, TtCSF, Ao_sum, To_sum]
         return [APET, TPET, NPET, ACSF, TpCSF, TCSF, TtCSF, Am_avg, Tm_avg, Ao_avg, To_avg, Tp_avg]
 
+    def get_L(self, t):
+        splits = [0, 3.0, 6.0, 9.0, 11.0, 12.0]
+        for i in range(5):
+            if splits[i] <= t <= splits[i + 1]:
+                return self.Ls[i]
+        if t > splits[-1]:
+            return self.Ls[-1]
+        assert splits[0] <= t <= splits[-1], "error in get_L: t = {} exceeded range!".format(t)
+
     def pend(self, y, t):
         # mt.time_start()
+        self.L = self.get_L(t)
+
         Am = y[0: self.n]
         Ao = y[self.n: self.n * 2]
         Af = y[self.n * 2: self.n * 3]
@@ -566,9 +581,10 @@ def loss_func_spatial(params, starts_weight, diffusion_list, ct_spatial: ConstTr
 
     loss = np.sum(record_pattern_penalty) + np.sum(record_rate_penalty)
     with open(save_file_path, "a") as f:
-        f.write("{0},{1},{2:.9f},{3:.9f},{4:.9f},{5:.6e},{6:.6e},{7:.6e},{8:.6e},{9:.6e}\n".format(
+        f.write("{0},{1},{2},{3:.9f},{4:.9f},{5:.9f},{6:.6e},{7:.6e},{8:.6e},{9:.6e},{10:.6e}\n".format(
             element_id,
             time_string,
+            ct_spatial.args.threshold,
             loss,
             np.sum(record_pattern_penalty),
             np.sum(record_rate_penalty),

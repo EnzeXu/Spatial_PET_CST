@@ -10,4 +10,4 @@
 #SBATCH --error="jobs_oe/spatial_simulation-%j.e"
 echo $(pwd) > "jobs/pwd.txt"
 source venv/bin/activate
-python spatial_simulation.py --threshold 0.1
+python spatial_simulation.py --threshold 0.2
