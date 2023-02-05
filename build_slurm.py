@@ -1,8 +1,8 @@
 draft = """#!/bin/bash
 #SBATCH --job-name="{0}"
-#SBATCH --partition=small
+#SBATCH --partition=medium
 #SBATCH --nodes=1
-#SBATCH --time=0-05:00:00
+#SBATCH --time=2-00:00:00
 #SBATCH --mem=16GB
 #SBATCH --mail-user=xue20@wfu.edu
 #SBATCH --mail-type=BEGIN,END,FAIL
@@ -131,6 +131,31 @@ def one_time_build_CD():
             "test_nsga.py",
             dic)
 
+def one_time_build_spatial():
+    plans = [
+        [3, 0.2, 1.0],
+        [3, 0.2, 10.0],
+        [3, 0.2, 100.0],
+        [3, 0.2, 1000.0],
+        [3, 0.5, 1.0],
+        [3, 0.5, 10.0],
+        [3, 0.5, 100.0],
+        [3, 0.5, 1000.0],
+        [3, 0.8, 1.0],
+        [3, 0.8, 10.0],
+        [3, 0.8, 100.0],
+        [3, 0.8, 1000.0],
+    ]
+    dic = dict()
+    for one_plan in plans:
+        dic["n"] = one_plan[0]
+        dic["threshold"] = one_plan[1]
+        dic["diffusion_unit_rate"] = one_plan[2]
+        one_slurm(
+            "spatial_{}_{}".format(one_plan[1], one_plan[2]),
+            "spatial_simulation.py",
+            dic)
+
 if __name__ == "__main__":
-    one_time_build_CD()
+    one_time_build_spatial()
     pass

@@ -24,7 +24,7 @@ class Start:
         Ao_avg = np.mean(Ao).reshape(1)
         Af = np.load(os.path.join(pet_data_path, "PET-A_{}.npy".format(self.class_name)))
         # randomize
-        Af = np.random.uniform(np.min(Af), np.max(Af), size=self.config.N_dim)
+        # Af = np.random.uniform(np.min(Af), np.max(Af), size=self.config.N_dim)
         Af = Af * 1e-2  # 1e-4
         Af_avg = np.mean(Af).reshape(1)
         ACSF = np.expand_dims(csf_data[0], axis=0)  # 0.14 * np.ones(1)
@@ -37,7 +37,7 @@ class Start:
         To_avg = np.mean(To).reshape(1)
         Tf = np.load(os.path.join(pet_data_path, "PET-T_{}.npy".format(self.class_name)))
         # randomize
-        Tf = np.random.uniform(np.min(Tf), np.max(Tf), size=self.config.N_dim)
+        # Tf = np.random.uniform(np.min(Tf), np.max(Tf), size=self.config.N_dim)
         Tf = Tf * 2 * 1e-3 #Tf*2*1e-4
         Tf_avg = np.mean(Tf).reshape(1)
         TCSF = np.expand_dims(csf_data[1] - csf_data[2], axis=0)  # 0.19 * np.ones(1)
@@ -45,7 +45,7 @@ class Start:
         TpCSF = np.expand_dims(csf_data[2], axis=0)  # 0.20 * np.ones(1)
         TpCSF = TpCSF * 5e-4 * 0.3  # TpCSF*1e-5
         N = np.load(os.path.join(pet_data_path, "PET-N_{}.npy".format(self.class_name)))
-        N = np.random.uniform(np.min(N), np.max(N), size=self.config.N_dim)
+        # N = np.random.uniform(np.min(N), np.max(N), size=self.config.N_dim)
         N_avg = np.mean(N).reshape(1)
 
         self.all = np.concatenate([Am, Ao, Af, ACSF, Tm, Tp, To, Tf, TCSF, TpCSF, N])

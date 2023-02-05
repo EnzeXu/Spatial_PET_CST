@@ -240,6 +240,21 @@ class ADSolver:
         # return [APET, TPET, NPET, ACSF, TpCSF, TCSF, TtCSF, Ao_sum, To_sum]
         return [APET, TPET, NPET, ACSF, TpCSF, TCSF, TtCSF, Am_avg, Tm_avg, Ao_avg, To_avg, Tp_avg]
 
+    # def get_output_spatial(self):
+    #     # Am = self.y[:, 0: self.n]
+    #     # Ao = self.y[:, self.n: self.n * 2]
+    #     Af = self.y[:, self.n * 2: self.n * 3]
+    #     # ACSF = self.y[:, self.n * 3: self.n * 3 + 1]
+    #     # Tm = self.y[:, self.n * 3 + 1: self.n * 4 + 1]
+    #     # Tp = self.y[:, self.n * 4 + 1: self.n * 5 + 1]
+    #     # To = self.y[:, self.n * 5 + 1: self.n * 6 + 1]
+    #     Tf = self.y[:, self.n * 6 + 1: self.n * 7 + 1]
+    #     # TCSF = self.y[:, self.n * 7 + 1: self.n * 7 + 2]
+    #     # TpCSF = self.y[:, self.n * 7 + 2: self.n * 7 + 3]
+    #     N = self.y[:, self.n * 7 + 3: self.n * 8 + 3]
+    #     return Af, Tf, N
+
+
     def get_L(self, t):
         splits = [0, 3.0, 6.0, 9.0, 11.0, 12.0]
         for i in range(5):
@@ -400,6 +415,8 @@ class ADSolver:
         # # print(dy.shape)
         # mt.time_end()
         return dy
+
+
 
     def draw(self, save_flag=True, time_string="test", given_loss=None):
 
@@ -581,10 +598,11 @@ def loss_func_spatial(params, starts_weight, diffusion_list, ct_spatial: ConstTr
 
     loss = np.sum(record_pattern_penalty) + np.sum(record_rate_penalty)
     with open(save_file_path, "a") as f:
-        f.write("{0},{1},{2},{3:.9f},{4:.9f},{5:.9f},{6:.6e},{7:.6e},{8:.6e},{9:.6e},{10:.6e}\n".format(
+        f.write("{0},{1},{2},{3},{4:.9f},{5:.9f},{6:.9f},{7:.6e},{8:.6e},{9:.6e},{10:.6e},{11:.6e}\n".format(
             element_id,
             time_string,
             ct_spatial.args.threshold,
+            ct_spatial.args.diffusion_unit_rate,
             loss,
             np.sum(record_pattern_penalty),
             np.sum(record_rate_penalty),
@@ -601,6 +619,24 @@ def loss_func_spatial(params, starts_weight, diffusion_list, ct_spatial: ConstTr
         np.save("{}/diffusion_list.npy".format(folder_path), np.asarray(diffusion_list))
         np.save("{}/params.npy".format(folder_path), np.asarray(params))
         np.save("{}/starts_weight.npy".format(folder_path), np.asarray(starts_weight))
+
+        default_colors = ["r", "g", "b"]
+        fig = plt.figure(figsize=(18, 18))
+        for i, one_target in enumerate(targets):
+            draw_data = ad.output_spatial[i]
+            draw_data = np.swapaxes(draw_data, 0, 1)
+            # print("{} shape: {}".format(one_target, draw_data.shape))
+            ax = fig.add_subplot(3, 1, i + 1)
+            for j in range(160):
+                ax.plot(ad.t, draw_data[j].flatten(), c=default_colors[i], linewidth=1, alpha=0.5)
+            ax.set_title("{} ({})".format(one_target, time_string))
+        plt.savefig("{}/diffusion_ATN.png".format(folder_path), dpi=300)
+        plt.close()
+
+
+
+
+
         fig = plt.figure(figsize=(8 * len(LABEL_LIST), 3 * len(targets)))
 
         for i, one_target in enumerate(targets):
@@ -610,11 +646,14 @@ def loss_func_spatial(params, starts_weight, diffusion_list, ct_spatial: ConstTr
             predict_points = np.asarray(ad.output_spatial[i][index_fixed])
             for j in range(len(LABEL_LIST)):
                 ax = fig.add_subplot(len(targets), len(LABEL_LIST), i * len(LABEL_LIST) + j + 1)
+                ax.plot(range(1, 161), predict_points[j, :], c="black", marker="o", markersize=1, linewidth=1)
+                ax.tick_params(axis='y', labelcolor="black")
                 ax.set_title("{}-{}".format(one_target, LABEL_LIST[j]))
-                ax.plot(range(1, 161), target_points[j, :], c="black", marker="o", markersize=1, linewidth=1)
+
                 ax2 = ax.twinx()
-                ax2.plot(range(1, 161), predict_points[j, :], c="red", marker="o", markersize=1, linewidth=1)
+                ax2.plot(range(1, 161), target_points[j, :], c="red", marker="o", markersize=1, linewidth=1)
                 ax2.tick_params(axis='y', labelcolor="red")
+
         plt.tight_layout()
         plt.savefig("{}/diffusion.png".format(folder_path), dpi=300)
         # plt.show()
@@ -741,7 +780,7 @@ if __name__ == "__main__":
     save = np.load("saves/params_A2_2250.npy")
     params = save[:46]
     starts = save[-11:]
-    from spatial_simulation import SPATIAL_DIFFUSION_CONST
+    # from spatial_simulation import SPATIAL_DIFFUSION_CONST
 
     # diffusion_list = np.asarray([SPATIAL_DIFFUSION_CONST[i]["init"] for i in range(5)])
     # diffusion_list = np.asarray([2.52e-03, 6.31e-06, 1.89e-04, 4.34e-04, 1.97e-06])
